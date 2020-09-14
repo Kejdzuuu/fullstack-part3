@@ -54,6 +54,24 @@ app.delete('/api/persons/:id', (req, res) => {
   res.status(204).end()
 })
 
+app.post('/api/persons', (req, res) => {
+  if(!req.body.name || !req.body.number) {
+    return res.status(400).json({
+      error: 'content missing'
+    })
+  }
+
+  const id = Math.floor(Math.random() * 0x10000000)
+  const person = {
+    name: req.body.name,
+    number: req.body.number,
+    id: id
+  }
+
+  persons = persons.concat(person)
+  res.json(person)
+})
+
 
 const PORT = 3001
 app.listen(PORT, () => {
