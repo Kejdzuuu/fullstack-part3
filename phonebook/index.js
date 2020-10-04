@@ -37,14 +37,9 @@ app.get('/api/persons', (req, res) => {
 })
 
 app.get('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  const person = persons.find(person => person.id === id)
-
-  if (person) {
-    res.json(person)
-  } else {
-    res.status(404).end()
-  }
+  PhoneNumber.findById(req.params.id).then(entry => {
+    res.json(entry)
+  })
 })
 
 app.delete('/api/persons/:id', (req, res) => {
@@ -54,26 +49,23 @@ app.delete('/api/persons/:id', (req, res) => {
 })
 
 app.post('/api/persons', (req, res) => {
-  if(!req.body.name || !req.body.number) {
+  const body = req.body
+
+  if(!body.name || !body.number) {
     return res.status(400).json({
       error: 'content missing'
     })
   }
-  if(persons.find(person => person.name === req.body.name)){
-    return res.status(400).json({
-      error: 'name must be unique'
-    })
-  }
 
-  const id = Math.floor(Math.random() * 0x10000000)
-  const person = {
-    name: req.body.name,
-    number: req.body.number,
-    id: id
-  }
+  const phoneNumber = new PhoneNumber ({
+    name: body.name,
+    number: body.number
+  })
 
-  persons = persons.concat(person)
-  res.json(person)
+  phoneNumber.save().then(newEntry =>{
+    console.log(`added ${phoneNumber.name}: ${phoneNumber.number} to phonebook`)
+    res.json(newEntry)
+  })
 })
 
 
