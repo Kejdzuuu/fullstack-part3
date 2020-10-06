@@ -19,15 +19,20 @@ persons = []
 
 
 app.get('/info', (req, res) => {
-  const info = () => {
-    return (`
-      <div>
-        <p>Phonebook has info on ${persons.length} people</p>
-        <p>${new Date().toString()}</p>
-      </div>
-    `)
-  }
-  res.send(info())
+  PhoneNumber.count({}, function(error, count) {
+    if (error){
+      res.send(error)
+    }
+    const info = () => {
+      return (`
+        <div>
+          <p>Phonebook has info on ${count} people</p>
+          <p>${new Date().toString()}</p>
+        </div>
+      `)
+    }
+    res.send(info())
+  })
 })
 
 app.get('/api/persons', (req, res) => {
@@ -36,17 +41,55 @@ app.get('/api/persons', (req, res) => {
   })
 })
 
-app.get('/api/persons/:id', (req, res) => {
+app.get('/api/persons/:id', (req, res, next) => {
   PhoneNumber.findById(req.params.id).then(entry => {
-    res.json(entry)
+    console.log(entry)
+    if (entry) {
+      res.json(entry)
+    } else {
+      res.status(404).end()
+    }
+  })
+  .catch(error => next(error))
+})
+
+app.delete('/api/persons/:id', (req, res, next) => {
+  PhoneNumber.findByIdAndRemove(req.params.id).then(r => {
+    res.status(204).end()
+  })
+  .catch(error => next(error))
+})
+
+app.put('/api/persons/:id', (req, res, next) => {
+  const body = req.body
+
+  if(!body.name || !body.number) {
+    return res.status(400).json({
+      error: 'content missing'
+    })
+  }
+
+  const phoneNumber = new PhoneNumber ({
+    name: body.name,
+    number: body.number
+  })
+
+  PhoneNumber.findByIdAndUpdate(req.params.id, { name: phoneNumber.name, number: phoneNumber.number}).then(r => {
+    res.status(204).end()
   })
 })
 
-app.delete('/api/persons/:id', (req, res) => {
-  const id = Number(req.params.id)
-  persons = persons.filter(person => person.id !== id)
-  res.status(204).end()
-})
+const errorHandler = (error, req, res, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return res.status(400).send({ error: 'malformatted id' })
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 app.post('/api/persons', (req, res) => {
   const body = req.body
@@ -62,7 +105,7 @@ app.post('/api/persons', (req, res) => {
     number: body.number
   })
 
-  phoneNumber.save().then(newEntry =>{
+  phoneNumber.save().then(newEntry => {
     console.log(`added ${phoneNumber.name}: ${phoneNumber.number} to phonebook`)
     res.json(newEntry)
   })
