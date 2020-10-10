@@ -79,19 +79,7 @@ app.put('/api/persons/:id', (req, res, next) => {
   })
 })
 
-const errorHandler = (error, req, res, next) => {
-  console.error(error.message)
-
-  if (error.name === 'CastError') {
-    return res.status(400).send({ error: 'malformatted id' })
-  }
-
-  next(error)
-}
-
-app.use(errorHandler)
-
-app.post('/api/persons', (req, res) => {
+app.post('/api/persons', (req, res, next) => {
   const body = req.body
 
   if(!body.name || !body.number) {
@@ -109,8 +97,22 @@ app.post('/api/persons', (req, res) => {
     console.log(`added ${phoneNumber.name}: ${phoneNumber.number} to phonebook`)
     res.json(newEntry)
   })
+  .catch(error => next(error))
 })
 
+const errorHandler = (error, req, res, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return res.status(400).send({ error: 'malformatted id' })
+  } else if (error.name === 'ValidationError') {
+    return res.status(400).send({ error: 'Entry already exists' })
+  }
+
+  next(error)
+}
+
+app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
