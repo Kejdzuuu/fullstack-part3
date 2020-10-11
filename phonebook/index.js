@@ -5,7 +5,7 @@ const cors = require('cors')
 const app = express()
 const PhoneNumber = require('./models/phone_number')
 
-morgan.token('data', function (req, res) {
+morgan.token('data', function (req) {
   const body = JSON.stringify(req.body)
   return body === '{}' ? '' : body
 })
@@ -40,22 +40,24 @@ app.get('/api/persons', (req, res) => {
 })
 
 app.get('/api/persons/:id', (req, res, next) => {
-  PhoneNumber.findById(req.params.id).then(entry => {
-    console.log(entry)
-    if (entry) {
-      res.json(entry)
-    } else {
-      res.status(404).end()
-    }
-  })
-  .catch(error => next(error))
+  PhoneNumber.findById(req.params.id)
+    .then(entry => {
+      console.log(entry)
+      if (entry) {
+        res.json(entry)
+      } else {
+        res.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 })
 
 app.delete('/api/persons/:id', (req, res, next) => {
-  PhoneNumber.findByIdAndRemove(req.params.id).then(r => {
-    res.status(204).end()
-  })
-  .catch(error => next(error))
+  PhoneNumber.findByIdAndRemove(req.params.id)
+    .then(() => {
+      res.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
 app.put('/api/persons/:id', (req, res, next) => {
@@ -72,8 +74,8 @@ app.put('/api/persons/:id', (req, res, next) => {
     number: body.number
   })
 
-  PhoneNumber.findByIdAndUpdate(req.params.id, { name: phoneNumber.name, number: phoneNumber.number}, { runValidators: true, context: 'query' })
-    .then(r => {
+  PhoneNumber.findByIdAndUpdate(req.params.id, { name: phoneNumber.name, number: phoneNumber.number }, { runValidators: true, context: 'query' })
+    .then(() => {
       res.status(204).end()
     })
     .catch(error => next(error))
@@ -93,11 +95,12 @@ app.post('/api/persons', (req, res, next) => {
     number: body.number
   })
 
-  phoneNumber.save().then(newEntry => {
-    console.log(`added ${phoneNumber.name}: ${phoneNumber.number} to phonebook`)
-    res.json(newEntry)
-  })
-  .catch(error => next(error))
+  phoneNumber.save()
+    .then(newEntry => {
+      console.log(`added ${phoneNumber.name}: ${phoneNumber.number} to phonebook`)
+      res.json(newEntry)
+    })
+    .catch(error => next(error))
 })
 
 const errorHandler = (error, req, res, next) => {
@@ -112,6 +115,7 @@ const errorHandler = (error, req, res, next) => {
 
 app.use(errorHandler)
 
+// eslint-disable-next-line no-undef
 const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
