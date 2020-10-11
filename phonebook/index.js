@@ -15,8 +15,6 @@ app.use(express.json())
 app.use(express.static('build'))
 app.use(morgan(':method :url :status :response-time :data'))
 
-persons = []
-
 
 app.get('/info', (req, res) => {
   PhoneNumber.count({}, function(error, count) {
@@ -74,9 +72,11 @@ app.put('/api/persons/:id', (req, res, next) => {
     number: body.number
   })
 
-  PhoneNumber.findByIdAndUpdate(req.params.id, { name: phoneNumber.name, number: phoneNumber.number}).then(r => {
-    res.status(204).end()
-  })
+  PhoneNumber.findByIdAndUpdate(req.params.id, { name: phoneNumber.name, number: phoneNumber.number}, { runValidators: true, context: 'query' })
+    .then(r => {
+      res.status(204).end()
+    })
+    .catch(error => next(error))
 })
 
 app.post('/api/persons', (req, res, next) => {
@@ -101,12 +101,10 @@ app.post('/api/persons', (req, res, next) => {
 })
 
 const errorHandler = (error, req, res, next) => {
-  console.error(error.message)
-
   if (error.name === 'CastError') {
     return res.status(400).send({ error: 'malformatted id' })
   } else if (error.name === 'ValidationError') {
-    return res.status(400).send({ error: 'Entry already exists' })
+    return res.status(400).json({ error: error.message })
   }
 
   next(error)
